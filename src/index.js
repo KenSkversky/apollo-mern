@@ -12,8 +12,8 @@ const typeDefs = gql`
         myTaskLists: [TaskList!]!
     }
     type Mutation {
-        signUp(input: SignUpInput): AuthUser!
-        signIn(input: SignInInput): AuthUser!
+        signUp(input: SignUpInput!): AuthUser! 
+        signIn(input: SignInInput!): AuthUser!
     }
     input SignUpInput {
         email: String!
@@ -70,14 +70,24 @@ const resolvers = {
             const user = result.ops[0]
             return {
                 user,
+                token: 'TOKEN',
+            }
+        },
+        signIn:  async ( _, { input }, { db }) => {
+            const user =  await db.collection('Users').findOne({ email: input.email });
+            if (!user) {
+                throw new Error('Invalid credentials!');
+              }
+              const isPasswordCorrect = await bcrypt.compareSync(input.password, user.password);
+              if (!isPasswordCorrect) {
+                throw new Error('Invalid credentials!');
+              }
+            //   console.log(user);
+            return {
+                user,
                 token: 'TOKEN'
             }
-            console.log(result);
-        },
-        signIn: () => {
-
         }
-
     },
     User: {
         id: ({ _id, id }) => _id || id
